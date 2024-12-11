@@ -8,9 +8,13 @@ class Robo_Survivor:
         self.nayton_leveys, self.nayton_korkeus = 640, 480
         self.naytto = pygame.display.set_mode((self.nayton_leveys, self.nayton_korkeus))
 
+        self.liikkeet = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False,}
+        self.nopeus = 2
+
         pygame.display.set_caption("Robo Survivor")
 
         self.kello = pygame.time.Clock()
+
         self.robo()
         self.silmukka()
 
@@ -21,14 +25,14 @@ class Robo_Survivor:
         self.robo_suunta = (0,0)
 
     def hirvio(self):
-        x, y, nopeus_x, nopeus_y = self.luo_aloituspaikka()
+        x, y = self.luo_aloituspaikka()
 
         hirvio_data = {
         "kuva": pygame.image.load("hirvio.png"),
         "x": x,
         "y": y,  
-        "nopeus_x": nopeus_x,
-        "nopeus_y": nopeus_y,  # Moves downward
+        "nopeus_x": 0,
+        "nopeus_y": 0,  # Moves downward
         }
         return hirvio_data
 
@@ -45,34 +49,45 @@ class Robo_Survivor:
         if aloituspaikka == "vasen":
             x = random.randint(vasen_x, -1)
             y = random.randint(0, self.nayton_korkeus - hirvio_kuva.get_height())
-            nopeus_x = 1
-            nopeus_y = 0
         elif aloituspaikka == "oikea":
             x = random.randint(self.nayton_leveys, oikea_x)
             y = random.randint(0, self.nayton_korkeus - hirvio_kuva.get_height())
-            nopeus_x = -1
-            nopeus_y = 0
         elif aloituspaikka == "ylos":
             x = random.randint(0, self.nayton_leveys -hirvio_kuva.get_width())
             y = random.randint(yla_y, -1)
-            nopeus_x = 0
-            nopeus_y = 1
         elif aloituspaikka == "alas":
             x = random.randint(0, self.nayton_leveys -1)
             y = random.randint(self.nayton_korkeus, ala_y)
-            nopeus_x = 0
-            nopeus_y = -1
 
-        return x, y, nopeus_x, nopeus_y
+        return x, y
     
 
     def tutki_tapahtumat(self):
         for tapahtuma in pygame.event.get():
             if tapahtuma.type == pygame.KEYDOWN:
+                if tapahtuma.key in self.liikkeet:
+                    self.liikkeet[tapahtuma.key] = True
                 if tapahtuma.key == pygame.K_F2:
                     self.silmukka()
+                if tapahtuma.key == pygame.K_ESCAPE:
+                    exit()
+            if tapahtuma.type == pygame.KEYUP:
+                if tapahtuma.key in self.liikkeet:
+                    self.liikkeet[tapahtuma.key] = False
             if tapahtuma.type == pygame.QUIT:
                 exit()
+
+    def liiku_robo(self):
+        if self.liikkeet[pygame.K_LEFT]:
+            self.robo_x -= self.nopeus
+        if self.liikkeet[pygame.K_RIGHT]:
+            self.robo_x += self.nopeus
+        if self.liikkeet[pygame.K_UP]:
+            self.robo_y -= self.nopeus
+        if self.liikkeet[pygame.K_DOWN]:
+            self.robo_y += self.nopeus
+        
+
 
     def hirvio_suunta(self, hirvio):
         robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
@@ -98,15 +113,15 @@ class Robo_Survivor:
         
         return suunta_x, suunta_y
         
-
+    
         
-
     
     def silmukka(self):   
         hirviot = [self.hirvio() for _ in range(10)]
         while True:
-            uusi_x, uusi_y, uusi_nopeus_x, uusi_nopeus_y = self.luo_aloituspaikka()
+            uusi_x, uusi_y = self.luo_aloituspaikka()
             self.tutki_tapahtumat()
+            self.liiku_robo()
             self.naytto.fill((100,100,100))
 
             for hirvio in hirviot:
@@ -118,16 +133,14 @@ class Robo_Survivor:
                     peli_loppu = True """
                 if (hirvio["x"]<= self.robo_x + self.robo_kuva.get_width() and
                 hirvio["x"] + hirvio["kuva"].get_width() >= self.robo_x and 
-                hirvio["y"] <= self.robo_y + self.robo_kuva.get_width() and
+                hirvio["y"] <= self.robo_y + self.robo_kuva.get_height() and
                 hirvio["y"] + hirvio["kuva"].get_height() >= self.robo_y):
                     hirvio["x"] = uusi_x
                     hirvio["y"] = uusi_y
 
             
                 self.naytto.blit(hirvio["kuva"], (hirvio["x"], hirvio["y"]))
-
             self.naytto.blit(self.robo_kuva, (self.robo_x, self.robo_y))
-
             pygame.display.flip()
             self.kello.tick(60)    
 
