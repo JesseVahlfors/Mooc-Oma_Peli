@@ -1,0 +1,3 @@
+Miekka animaatio hiiren suuntaan, siihen osumatarkistus ja hirvioiden häviäminen, kun osuu.
+robo elämät/hp, häviö tapahtuma.
+pomo hirvio jolla hp. Voitto tapahtuma
