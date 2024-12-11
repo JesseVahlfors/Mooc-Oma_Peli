@@ -7,9 +7,9 @@ class Robo_Survivor:
 
         self.nayton_leveys, self.nayton_korkeus = 640, 480
         self.naytto = pygame.display.set_mode((self.nayton_leveys, self.nayton_korkeus))
-
+        #Kirja liike tapahtumille ja robon nopeus
         self.liikkeet = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False,}
-        self.nopeus = 2
+        self.robo_nopeus = 3
 
         pygame.display.set_caption("Robo Survivor")
 
@@ -19,20 +19,21 @@ class Robo_Survivor:
         self.silmukka()
 
     def robo(self):
-        self.robo_kuva = pygame.image.load("robo.png")
-        self.robo_x = 320 - self.robo_kuva.get_width()/2
+        kuva = pygame.image.load("robo.png")
+        self.robo_kuva = pygame.transform.scale(kuva, (kuva.get_width() * 0.6, kuva.get_height() * 0.6))
+        self.robo_x = 320 - self.robo_kuva.get_width()/2 #robon aloituspiste keskelle ruutua
         self.robo_y = 240 - self.robo_kuva.get_height()/2
         self.robo_suunta = (0,0)
 
     def hirvio(self):
         x, y = self.luo_aloituspaikka()
-
+        kuva = pygame.image.load("hirvio.png")
         hirvio_data = {
-        "kuva": pygame.image.load("hirvio.png"),
+        "kuva": pygame.transform.scale(kuva, (kuva.get_width() * 0.6, kuva.get_height() * 0.6)),
         "x": x,
         "y": y,  
         "nopeus_x": 0,
-        "nopeus_y": 0,  # Moves downward
+        "nopeus_y": 0,
         }
         return hirvio_data
 
@@ -79,13 +80,13 @@ class Robo_Survivor:
 
     def liiku_robo(self):
         if self.liikkeet[pygame.K_LEFT]:
-            self.robo_x -= self.nopeus
+            self.robo_x -= self.robo_nopeus
         if self.liikkeet[pygame.K_RIGHT]:
-            self.robo_x += self.nopeus
+            self.robo_x += self.robo_nopeus
         if self.liikkeet[pygame.K_UP]:
-            self.robo_y -= self.nopeus
+            self.robo_y -= self.robo_nopeus
         if self.liikkeet[pygame.K_DOWN]:
-            self.robo_y += self.nopeus
+            self.robo_y += self.robo_nopeus
         
 
 
@@ -117,7 +118,7 @@ class Robo_Survivor:
         
     
     def silmukka(self):   
-        hirviot = [self.hirvio() for _ in range(10)]
+        hirviot = [self.hirvio() for _ in range(15)]
         while True:
             uusi_x, uusi_y = self.luo_aloituspaikka()
             self.tutki_tapahtumat()
