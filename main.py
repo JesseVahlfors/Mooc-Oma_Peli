@@ -73,6 +73,34 @@ class Robo_Survivor:
                     self.silmukka()
             if tapahtuma.type == pygame.QUIT:
                 exit()
+
+    def hirvio_suunta(self, hirvio):
+        robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
+        robo_keskipiste_y = self.robo_y + self.robo_kuva.get_height()/2
+        hirvio_keskipiste_x = hirvio["kuva"].get_width()/2
+        hirvio_keskipiste_y = hirvio["kuva"].get_height()/2
+        suunta_x = 0
+        suunta_y = 0
+
+        if robo_keskipiste_x < hirvio["x"] + hirvio_keskipiste_x:
+            suunta_x = -1
+        elif robo_keskipiste_x > hirvio["x"] + hirvio_keskipiste_x:
+            suunta_x = 1
+        else:
+            suunta_x = 0
+
+        if robo_keskipiste_y < hirvio["y"] + hirvio_keskipiste_y:
+            suunta_y = -1
+        elif robo_keskipiste_y > hirvio["y"] + hirvio_keskipiste_y:
+            suunta_y = 1
+        else:
+            suunta_y = 0
+        
+        return suunta_x, suunta_y
+        
+
+        
+
     
     def silmukka(self):   
         hirviot = [self.hirvio() for _ in range(10)]
@@ -81,7 +109,8 @@ class Robo_Survivor:
             self.tutki_tapahtumat()
             self.naytto.fill((100,100,100))
 
-            for hirvio in hirviot:    
+            for hirvio in hirviot:
+                hirvio["nopeus_x"], hirvio["nopeus_y"]  = self.hirvio_suunta(hirvio)    
                 hirvio["y"] += hirvio["nopeus_y"]
                 hirvio["x"] += hirvio["nopeus_x"]
 
@@ -93,8 +122,6 @@ class Robo_Survivor:
                 hirvio["y"] + hirvio["kuva"].get_height() >= self.robo_y):
                     hirvio["x"] = uusi_x
                     hirvio["y"] = uusi_y
-                    hirvio["nopeus_x"] = uusi_nopeus_x
-                    hirvio["nopeus_y"] = uusi_nopeus_y
 
             
                 self.naytto.blit(hirvio["kuva"], (hirvio["x"], hirvio["y"]))
