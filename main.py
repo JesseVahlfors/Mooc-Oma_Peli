@@ -1,5 +1,40 @@
 import pygame
 import random
+import math
+
+class RoboMiekka:
+    def __init__(self, robo_x, robo_y):
+        self.robo_x = robo_x
+        self.robo_y = robo_y
+        self.halkaisija = 75
+        self.lyonti_paalla = False
+        self.kulma = 0
+
+    def robo_sijainti(self, robo_x, robo_y):
+        self.robo_x = robo_x
+        self.robo_y = robo_y
+
+    def luo_lyonti(self, kulma):
+        miekan_rata = math.pi / 2
+        self.kulma = kulma - miekan_rata / 2
+        self.lyonti_paalla = True
+        self.kulma_loppu = kulma + miekan_rata /2
+
+    def miekan_sijainti(self):
+        if self.lyonti_paalla:
+            self.kulma += 0.1
+            if self.kulma > self.kulma_loppu:
+                self.lyonti_paalla = False
+                return None
+            miekan_alku_x = self.robo_x + (self.halkaisija -50) * math.cos(self.kulma)
+            miekan_alku_y = self.robo_y + (self.halkaisija -50) * math.sin(self.kulma)
+            miekan_paa_x = self.robo_x + self.halkaisija * math.cos(self.kulma)
+            miekan_paa_y = self.robo_y + self.halkaisija * math.sin(self.kulma)
+            
+            return (miekan_alku_x , miekan_alku_y), (miekan_paa_x, miekan_paa_y)
+        
+        return None
+
 
 class Robo_Survivor:
     def __init__(self):
@@ -16,6 +51,7 @@ class Robo_Survivor:
         self.kello = pygame.time.Clock()
 
         self.robo()
+        self.robo_miekka = RoboMiekka(self.robo_keskipiste_x, self.robo_keskipiste_y)
         self.silmukka()
 
     def robo(self):
@@ -23,7 +59,9 @@ class Robo_Survivor:
         self.robo_kuva = pygame.transform.scale(kuva, (kuva.get_width() * 0.6, kuva.get_height() * 0.6))
         self.robo_x = 320 - self.robo_kuva.get_width()/2 #robon aloituspiste keskelle ruutua
         self.robo_y = 240 - self.robo_kuva.get_height()/2
-        self.robo_suunta = (0,0)
+        self.robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
+        self.robo_keskipiste_y = self.robo_y + self.robo_kuva.get_height()/2
+
 
     def hirvio(self):
         x, y = self.luo_aloituspaikka()
@@ -75,6 +113,11 @@ class Robo_Survivor:
             if tapahtuma.type == pygame.KEYUP:
                 if tapahtuma.key in self.liikkeet:
                     self.liikkeet[tapahtuma.key] = False
+            if tapahtuma.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                kulma = math.atan2(mouse_y - self.robo_keskipiste_y, mouse_x - self.robo_keskipiste_x)
+                self.robo_miekka.luo_lyonti(kulma)
+
             if tapahtuma.type == pygame.QUIT:
                 exit()
 
@@ -87,6 +130,10 @@ class Robo_Survivor:
             self.robo_y -= self.robo_nopeus
         if self.liikkeet[pygame.K_DOWN]:
             self.robo_y += self.robo_nopeus
+
+        self.robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
+        self.robo_keskipiste_y = self.robo_y + self.robo_kuva.get_height()/2
+        
         
 
 
@@ -139,8 +186,13 @@ class Robo_Survivor:
                     hirvio["x"] = uusi_x
                     hirvio["y"] = uusi_y
 
-            
+                
                 self.naytto.blit(hirvio["kuva"], (hirvio["x"], hirvio["y"]))
+            
+            self.robo_miekka.robo_sijainti(self.robo_keskipiste_x, self.robo_keskipiste_y)
+            miekan_isku = self.robo_miekka.miekan_sijainti()
+            if miekan_isku:
+                pygame.draw.line(self.naytto, (255, 255, 255), miekan_isku[0], miekan_isku[1], 3)
             self.naytto.blit(self.robo_kuva, (self.robo_x, self.robo_y))
             pygame.display.flip()
             self.kello.tick(60)    
