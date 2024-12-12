@@ -16,23 +16,23 @@ class RoboMiekka:
 
     def luo_lyonti(self, kulma):
         miekan_rata = math.pi / 2
-        self.kulma = kulma - miekan_rata / 2
+        self.kulma = kulma
+        self.kulma_alku = kulma - miekan_rata / 2
         self.lyonti_paalla = True
         self.kulma_loppu = kulma + miekan_rata /2
 
     def miekan_sijainti(self):
         if self.lyonti_paalla:
-            self.kulma += 0.1
-            if self.kulma > self.kulma_loppu:
+            self.kulma_alku += 0.2
+            if self.kulma_alku > self.kulma_loppu:
                 self.lyonti_paalla = False
                 return None
-            miekan_alku_x = self.robo_x + (self.halkaisija -50) * math.cos(self.kulma)
-            miekan_alku_y = self.robo_y + (self.halkaisija -50) * math.sin(self.kulma)
-            miekan_paa_x = self.robo_x + self.halkaisija * math.cos(self.kulma)
-            miekan_paa_y = self.robo_y + self.halkaisija * math.sin(self.kulma)
+            miekan_alku_x = self.robo_x + (self.halkaisija -40) * math.cos(self.kulma_alku)
+            miekan_alku_y = self.robo_y + (self.halkaisija -40) * math.sin(self.kulma_alku)
+            miekan_paa_x = self.robo_x + self.halkaisija * math.cos(self.kulma_alku)
+            miekan_paa_y = self.robo_y + self.halkaisija * math.sin(self.kulma_alku)
             
             return (miekan_alku_x , miekan_alku_y), (miekan_paa_x, miekan_paa_y)
-        
         return None
 
 
@@ -42,6 +42,7 @@ class Robo_Survivor:
 
         self.nayton_leveys, self.nayton_korkeus = 640, 480
         self.naytto = pygame.display.set_mode((self.nayton_leveys, self.nayton_korkeus))
+
         #Kirja liike tapahtumille ja robon nopeus
         self.liikkeet = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False,}
         self.robo_nopeus = 3
@@ -84,20 +85,18 @@ class Robo_Survivor:
         ala_y = self.nayton_korkeus + 100
 
         aloituspaikka = random.choice(["vasen", "oikea", "ylos", "alas"])
-
         if aloituspaikka == "vasen":
-            x = random.randint(vasen_x, -1)
+            x = random.randint(vasen_x, -20)
             y = random.randint(0, self.nayton_korkeus - hirvio_kuva.get_height())
         elif aloituspaikka == "oikea":
-            x = random.randint(self.nayton_leveys, oikea_x)
+            x = random.randint(self.nayton_leveys + 20, oikea_x)
             y = random.randint(0, self.nayton_korkeus - hirvio_kuva.get_height())
         elif aloituspaikka == "ylos":
             x = random.randint(0, self.nayton_leveys -hirvio_kuva.get_width())
-            y = random.randint(yla_y, -1)
+            y = random.randint(yla_y, -30)
         elif aloituspaikka == "alas":
             x = random.randint(0, self.nayton_leveys -1)
-            y = random.randint(self.nayton_korkeus, ala_y)
-
+            y = random.randint(self.nayton_korkeus +20, ala_y)
         return x, y
     
 
@@ -115,6 +114,7 @@ class Robo_Survivor:
                     self.liikkeet[tapahtuma.key] = False
             if tapahtuma.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
+                #laskee kulman hiiren ja robon välille
                 kulma = math.atan2(mouse_y - self.robo_keskipiste_y, mouse_x - self.robo_keskipiste_x)
                 self.robo_miekka.luo_lyonti(kulma)
 
@@ -130,12 +130,7 @@ class Robo_Survivor:
             self.robo_y -= self.robo_nopeus
         if self.liikkeet[pygame.K_DOWN]:
             self.robo_y += self.robo_nopeus
-
-        self.robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
-        self.robo_keskipiste_y = self.robo_y + self.robo_kuva.get_height()/2
         
-        
-
 
     def hirvio_suunta(self, hirvio):
         robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
@@ -158,39 +153,78 @@ class Robo_Survivor:
             suunta_y = 1
         else:
             suunta_y = 0
-        
+
         return suunta_x, suunta_y
-        
     
-        
+    def liiku_hirvio(self, hirvio):
+        hirvio_x = hirvio["x"]
+        hirvio_y = hirvio["y"]
+        suunta_x, suunta_y  = self.hirvio_suunta(hirvio)
+        hirvio["x"] += suunta_x
+        hirvio["y"] += suunta_y
+
+        if self.hirviot_paallekkain(hirvio):
+            hirvio["x"] = hirvio_x
+            hirvio["y"] = hirvio_y
+            if hirvio["nopeus_x"] == 0 and hirvio["nopeus_y"] == 0:
+                hirvio["x"], hirvio["y"] = self.luo_aloituspaikka()
+
+
+
+
+    def hirviot_paallekkain(self, hirvio):
+            for muu_hirvio in self.hirviot:
+                if hirvio != muu_hirvio:
+                    if (hirvio["x"] <= muu_hirvio["x"] - 5 + muu_hirvio["kuva"].get_width() and
+                        hirvio["x"] + hirvio["kuva"].get_width() >= muu_hirvio["x"] and 
+                        hirvio["y"] <= muu_hirvio["y"] - 5 + muu_hirvio["kuva"].get_height() and
+                        hirvio["y"] + hirvio["kuva"].get_height() >= muu_hirvio["y"]):
+                        return True
+            return False
     
-    def silmukka(self):   
-        hirviot = [self.hirvio() for _ in range(15)]
-        while True:
-            uusi_x, uusi_y = self.luo_aloituspaikka()
-            self.tutki_tapahtumat()
-            self.liiku_robo()
-            self.naytto.fill((100,100,100))
-
-            for hirvio in hirviot:
-                hirvio["nopeus_x"], hirvio["nopeus_y"]  = self.hirvio_suunta(hirvio)    
-                hirvio["y"] += hirvio["nopeus_y"]
-                hirvio["x"] += hirvio["nopeus_x"]
-
-                """ if self.hirvio_y >= self.nayton_korkeus - self.hirvio_kuva.get_width():
-                    peli_loppu = True """
-                if (hirvio["x"]<= self.robo_x + self.robo_kuva.get_width() and
+    def osuuko_roboon(self, hirvio):
+        uusi_x, uusi_y = self.luo_aloituspaikka()
+        if (hirvio["x"]<= self.robo_x + self.robo_kuva.get_width() and
                 hirvio["x"] + hirvio["kuva"].get_width() >= self.robo_x and 
                 hirvio["y"] <= self.robo_y + self.robo_kuva.get_height() and
                 hirvio["y"] + hirvio["kuva"].get_height() >= self.robo_y):
                     hirvio["x"] = uusi_x
                     hirvio["y"] = uusi_y
-
-                
-                self.naytto.blit(hirvio["kuva"], (hirvio["x"], hirvio["y"]))
-            
-            self.robo_miekka.robo_sijainti(self.robo_keskipiste_x, self.robo_keskipiste_y)
+        
+    def osuuko_hirvioon(self, miekan_isku, hirvio):
+        if miekan_isku != None:
+            alku_x, alku_y  = miekan_isku[0]
+            loppu_x, loppu_y = miekan_isku[1]
+            keski_x = (alku_x + loppu_x) /2
+            keski_y = (alku_y + loppu_y) /2
+            if (hirvio["x"] < loppu_x < hirvio["x"] + hirvio["kuva"].get_width() and
+                hirvio["y"] < loppu_y < hirvio["y"] + hirvio["kuva"].get_height()):
+                return True
+            if (hirvio["x"] < alku_x < hirvio["x"] + hirvio["kuva"].get_width() and
+                hirvio["y"] < alku_y < hirvio["y"] + hirvio["kuva"].get_height()):
+                return True
+            if (hirvio["x"] < keski_x < hirvio["x"] + hirvio["kuva"].get_width() and
+                hirvio["y"] < keski_y < hirvio["y"] + hirvio["kuva"].get_height()):
+                return True
+        return False
+    
+    def silmukka(self):   
+        self.hirviot = [self.hirvio() for _ in range(15)]
+        while True:
+            uusi_x, uusi_y = self.luo_aloituspaikka()
+            self.tutki_tapahtumat()
+            self.liiku_robo()
+            self.naytto.fill((100,100,100))
             miekan_isku = self.robo_miekka.miekan_sijainti()
+            for hirvio in self.hirviot:
+                self.liiku_hirvio(hirvio)
+                self.osuuko_roboon(hirvio)
+                if self.osuuko_hirvioon(miekan_isku, hirvio):
+                    hirvio["x"] = uusi_x
+                    hirvio["y"] = uusi_y
+                self.naytto.blit(hirvio["kuva"], (hirvio["x"], hirvio["y"]))
+                
+            self.robo_miekka.robo_sijainti(self.robo_keskipiste_x, self.robo_keskipiste_y)
             if miekan_isku:
                 pygame.draw.line(self.naytto, (255, 255, 255), miekan_isku[0], miekan_isku[1], 3)
             self.naytto.blit(self.robo_kuva, (self.robo_x, self.robo_y))
