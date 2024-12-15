@@ -44,7 +44,7 @@ class Robo_Survivor:
         self.naytto = pygame.display.set_mode((self.nayton_leveys, self.nayton_korkeus))
 
         #Kirja liike tapahtumille ja robon nopeus
-        self.liikkeet = {pygame.K_LEFT: False, pygame.K_RIGHT: False, pygame.K_UP: False, pygame.K_DOWN: False,}
+        self.liikkeet = {pygame.K_a: False, pygame.K_d: False, pygame.K_w: False, pygame.K_s: False,}
         self.robo_nopeus = 3
 
         pygame.display.set_caption("Robo Survivor")
@@ -122,14 +122,17 @@ class Robo_Survivor:
                 exit()
 
     def liiku_robo(self):
-        if self.liikkeet[pygame.K_LEFT]:
+        if self.liikkeet[pygame.K_a]:
             self.robo_x -= self.robo_nopeus
-        if self.liikkeet[pygame.K_RIGHT]:
+        if self.liikkeet[pygame.K_d]:
             self.robo_x += self.robo_nopeus
-        if self.liikkeet[pygame.K_UP]:
+        if self.liikkeet[pygame.K_w]:
             self.robo_y -= self.robo_nopeus
-        if self.liikkeet[pygame.K_DOWN]:
+        if self.liikkeet[pygame.K_s]:
             self.robo_y += self.robo_nopeus
+        #päivittää keskipisteen kun robo liikkuu
+        self.robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
+        self.robo_keskipiste_y = self.robo_y + self.robo_kuva.get_height()/2
         
 
     def hirvio_suunta(self, hirvio):
