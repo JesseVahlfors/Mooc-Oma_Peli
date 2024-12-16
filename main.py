@@ -124,6 +124,8 @@ class Robo_Survivor:
     def __init__(self):
         pygame.init()
 
+        self.pisteet = 0
+        self.fontti = pygame.font.SysFont(None, 30)
         self.nayton_leveys, self.nayton_korkeus = 640, 480
         self.naytto = pygame.display.set_mode((self.nayton_leveys, self.nayton_korkeus))
 
@@ -186,8 +188,6 @@ class Robo_Survivor:
         self.robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
         self.robo_keskipiste_y = self.robo_y + self.robo_kuva.get_height()/2
 
-        
-    
     def osuuko_roboon(self, hirvio):
         if (
             hirvio.x <= self.robo_x + self.robo_kuva.get_width() and
@@ -197,14 +197,23 @@ class Robo_Survivor:
         ):
             return True
         return False
+    
+    def piirra_pisteet(self, fontti):
+        pisteet_teksti = fontti.render(f"Pisteet: {self.pisteet}", True, (255,255,255))
+        pisteet_laatikko = pisteet_teksti.get_rect()
+        pisteet_laatikko.topright = (self.nayton_leveys - 10, 10)
+        self.naytto.blit(pisteet_teksti, pisteet_laatikko)
         
     
-    def silmukka(self):   
-        self.hirviot = [PikkuHirvio(self.nayton_leveys, self.nayton_korkeus) for _ in range(15)]
+    def silmukka(self): 
+        
+        hirvio_generaattori = (PikkuHirvio(self.nayton_leveys, self.nayton_korkeus) for _ in range(100))  
+        self.hirviot = [next(hirvio_generaattori) for _ in range(15)]
         while True:
+            self.naytto.fill((100,100,100))
+            self.piirra_pisteet(self.fontti)
             self.tutki_tapahtumat()
             self.liiku_robo()
-            self.naytto.fill((100,100,100))
             miekan_isku = self.robo_miekka.miekan_sijainti()
             for hirvio in self.hirviot:
                 hirvio.hirvio_suunta(self.robo_keskipiste_x, self.robo_keskipiste_y)
@@ -218,9 +227,15 @@ class Robo_Survivor:
                     
                 if hirvio.osuuko_hirvioon(miekan_isku):
                     hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
+                    self.hirviot.remove(hirvio)
+                    try:
+                        self.hirviot.append(next(hirvio_generaattori))
+                    except StopIteration:
+                        pass
+                    self.pisteet +=1
+
 
                 self.naytto.blit(hirvio.kuva, (hirvio.x, hirvio.y))
-                
             self.robo_miekka.robo_sijainti(self.robo_keskipiste_x, self.robo_keskipiste_y)
             if miekan_isku:
                 pygame.draw.line(self.naytto, (255, 255, 255), miekan_isku[0], miekan_isku[1], 3)
