@@ -95,6 +95,23 @@ class Hirvio:
                     self.y <= muu_hirvio.y - 5 + muu_hirvio.kuva.get_height() and
                     self.y + self.kuva.get_height() >= muu_hirvio.y):
                     return True
+        return False
+
+    def osuuko_hirvioon(self, miekan_isku):
+        if miekan_isku != None:
+            alku_x, alku_y  = miekan_isku[0]
+            loppu_x, loppu_y = miekan_isku[1]
+            keski_x = (alku_x + loppu_x) /2
+            keski_y = (alku_y + loppu_y) /2
+            if (self.x < loppu_x < self.x + self.kuva.get_width() and
+                self.y < loppu_y < self.y + self.kuva.get_height()):
+                return True
+            if (self.x < alku_x < self.x + self.kuva.get_width() and
+                self.y < alku_y < self.y + self.kuva.get_height()):
+                return True
+            if (self.x < keski_x < self.x + self.kuva.get_width() and
+                self.y < keski_y < self.y + self.kuva.get_height()):
+                return True
         return False  
 
 class PikkuHirvio(Hirvio):
@@ -175,22 +192,6 @@ class Robo_Survivor:
             return True
         return False
         
-    def osuuko_hirvioon(self, miekan_isku, hirvio):
-        if miekan_isku != None:
-            alku_x, alku_y  = miekan_isku[0]
-            loppu_x, loppu_y = miekan_isku[1]
-            keski_x = (alku_x + loppu_x) /2
-            keski_y = (alku_y + loppu_y) /2
-            if (hirvio.x < loppu_x < hirvio.x + hirvio.kuva.get_width() and
-                hirvio.y < loppu_y < hirvio.y + hirvio.kuva.get_height()):
-                return True
-            if (hirvio.x < alku_x < hirvio.x + hirvio.kuva.get_width() and
-                hirvio.y < alku_y < hirvio.y + hirvio.kuva.get_height()):
-                return True
-            if (hirvio.x < keski_x < hirvio.x + hirvio.kuva.get_width() and
-                hirvio.y < keski_y < hirvio.y + hirvio.kuva.get_height()):
-                return True
-        return False
     
     def silmukka(self):   
         self.hirviot = [PikkuHirvio(self.nayton_leveys, self.nayton_korkeus) for _ in range(15)]
@@ -209,7 +210,7 @@ class Robo_Survivor:
                 if self.osuuko_roboon(hirvio):
                     hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
                     
-                if self.osuuko_hirvioon(miekan_isku, hirvio):
+                if hirvio.osuuko_hirvioon(miekan_isku):
                     hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
 
                 self.naytto.blit(hirvio.kuva, (hirvio.x, hirvio.y))
