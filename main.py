@@ -177,9 +177,15 @@ class Robo_Survivor:
             self.robo_y -= self.robo_nopeus
         if self.liikkeet[pygame.K_s]:
             self.robo_y += self.robo_nopeus
+
+        #rajoitetaan liike ikkunan reunoihin
+        self.robo_x = max(0, min(self.nayton_leveys - self.robo_kuva.get_width(), self.robo_x))
+        self.robo_y = max(0, min(self.nayton_korkeus - self.robo_kuva.get_height(), self.robo_y))
+
         #päivittää keskipisteen kun robo liikkuu
         self.robo_keskipiste_x = self.robo_x + self.robo_kuva.get_width()/2
         self.robo_keskipiste_y = self.robo_y + self.robo_kuva.get_height()/2
+
         
     
     def osuuko_roboon(self, hirvio):
