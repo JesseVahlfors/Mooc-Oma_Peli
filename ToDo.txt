@@ -1,3 +1,2 @@
-hirvio generaattori. 100 hirviota joista 15 kerrallaan ruudulla. kun yksi kuolee miekasta. Seuraava generoituu.
 robo elämät patteri = ovi.png , häviö tapahtuma.
-pomo hirvio jolla hp ja syoksy. Voitto tapahtuma
+Luo aloitusruutu ohjeilla ja voittoruutu.

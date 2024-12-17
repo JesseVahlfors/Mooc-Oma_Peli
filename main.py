@@ -9,6 +9,7 @@ class RoboMiekka:
         self.halkaisija = 75
         self.lyonti_paalla = False
         self.kulma = 0
+        self.osutut_hirviot = [] #sisältää osutut hirviot, jotta miekka ei osu monta kertaa per isku
 
     def robo_sijainti(self, robo_x, robo_y):
         self.robo_x = robo_x
@@ -20,6 +21,7 @@ class RoboMiekka:
         self.kulma_alku = kulma - miekan_rata / 2
         self.lyonti_paalla = True
         self.kulma_loppu = kulma + miekan_rata /2
+        self.osutut_hirviot = []
 
     def miekan_sijainti(self):
         if self.lyonti_paalla:
@@ -43,6 +45,7 @@ class Hirvio:
         self.nayton_leveys = nayton_leveys
         self.nayton_korkeus = nayton_korkeus
         self.x, self.y = self.luo_aloituspaikka()
+        self.hp = 1
 
     def luo_aloituspaikka(self):
         #kuvan ulkopuoliset koordinaatit
@@ -119,6 +122,64 @@ class PikkuHirvio(Hirvio):
         super().__init__(nayton_leveys, nayton_korkeus)
         self.kuva = pygame.transform.scale(self.kuva, (self.kuva.get_width() * 0.6, self.kuva.get_height() * 0.6))
 
+class PomoHirvio(Hirvio):
+    def __init__(self, nayton_leveys, nayton_korkeus):
+        super().__init__(nayton_leveys, nayton_korkeus)
+        self.kuva.fill((255, 0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+        self.kuva =  pygame.transform.scale(self.kuva, (self.kuva.get_width() * 1.5, self.kuva.get_height() * 1.5))
+        self.hp = 30
+        self.osuma_aika = 0
+        self.aloitus_aika = 120
+        self.syoksy_aika = 60
+        self.vaihe = None
+
+        self.syntymä_aika = pygame.time.get_ticks()
+        self.syoksy_vali = 5000
+        self.viime_syoksy = self.syntymä_aika
+    
+    def osuma_kuva(self, naytto): #Pomo hirvio välähtää, kun saa osuman
+        if self.osuma_aika > 0:
+            osuma_kuva = self.kuva.copy()
+            osuma_kuva.fill((200, 200, 255), special_flags=pygame.BLEND_RGBA_SUB)
+            naytto.blit(osuma_kuva, (self.x, self.y))
+            self.osuma_aika -= 1
+        else:
+            naytto.blit(self.kuva, (self.x, self.y))
+
+    def aloita_syoksy(self, robo_keskipiste_x, robo_keskipiste_y): #aloittaa tärinän ja antaa syoksyn suunnan ja nopeuden, kun tärinä loppuu 
+        if self.aloitus_aika <= 0:
+            self.hirvio_suunta(robo_keskipiste_x, robo_keskipiste_y)
+            self.vaihe = "syoksyy"
+            self.nopeus_x *= 30
+            self.nopeus_y *= 30
+        else:
+            self.vaihe = "tarisee"
+
+       
+    def syoksy(self):
+        if self.vaihe == "tarisee":
+            self.x += random.randint(-5, 5)
+            self.y += random.randint(-5, 5)
+        elif self.vaihe == "syoksyy":
+            if self.syoksy_aika > 0:
+                self.x += self.nopeus_x 
+                self.y += self.nopeus_y
+                self.syoksy_aika -= 1
+            else:
+                self.vaihe = None
+    
+    def syoksy_seuraus(self, robo_keskipiste_x, robo_keskipiste_y): #seuraa syoksyn ajoitusta ja alustaa syoksyajan ja tärinäajan.
+        aika = pygame.time.get_ticks()
+        print(self.syoksy_aika)
+        if aika - self.viime_syoksy >= self.syoksy_vali:
+            self.aloita_syoksy(robo_keskipiste_x, robo_keskipiste_y)
+            self.viime_syoksy = aika
+        if self.vaihe == "tarisee": 
+            self.aloitus_aika -=1
+            self.syoksy_aika = 10
+        else:
+            self.aloitus_aika = 120
+
 
 class Robo_Survivor:
     def __init__(self):
@@ -139,7 +200,7 @@ class Robo_Survivor:
 
         self.robo()
         self.robo_miekka = RoboMiekka(self.robo_keskipiste_x, self.robo_keskipiste_y)
-        self.silmukka()
+        self.peli_silmukka()
 
     def robo(self):
         kuva = pygame.image.load("robo.png")
@@ -155,7 +216,7 @@ class Robo_Survivor:
                 if tapahtuma.key in self.liikkeet:
                     self.liikkeet[tapahtuma.key] = True
                 if tapahtuma.key == pygame.K_F2:
-                    self.silmukka()
+                    self.peli_silmukka()
                 if tapahtuma.key == pygame.K_ESCAPE:
                     exit()
             if tapahtuma.type == pygame.KEYUP:
@@ -189,11 +250,16 @@ class Robo_Survivor:
         self.robo_keskipiste_y = self.robo_y + self.robo_kuva.get_height()/2
 
     def osuuko_roboon(self, hirvio):
+        robo_oikea = self.robo_x + self.robo_kuva.get_width()
+        robo_ala = self.robo_y + self.robo_kuva.get_height()
+        hirvio_oikea = hirvio.x + hirvio.kuva.get_width()
+        hirvio_ala = hirvio.y + hirvio.kuva.get_height()
+
         if (
-            hirvio.x <= self.robo_x + self.robo_kuva.get_width() and
-            hirvio.x + hirvio.kuva.get_width() >= self.robo_x and 
-            hirvio.y <= self.robo_y + self.robo_kuva.get_height() and
-            hirvio.y + hirvio.kuva.get_height() >= self.robo_y
+            hirvio.x +10 <= robo_oikea and
+            hirvio_oikea -10 >= self.robo_x and 
+            hirvio.y +10 <= robo_ala and
+            hirvio_ala -10 >= self.robo_y
         ):
             return True
         return False
@@ -203,12 +269,15 @@ class Robo_Survivor:
         pisteet_laatikko = pisteet_teksti.get_rect()
         pisteet_laatikko.topright = (self.nayton_leveys - 10, 10)
         self.naytto.blit(pisteet_teksti, pisteet_laatikko)
+
+    def pomo_generaattori(self):
+        yield PomoHirvio(self.nayton_leveys, self.nayton_korkeus)
         
     
-    def silmukka(self): 
-        
-        hirvio_generaattori = (PikkuHirvio(self.nayton_leveys, self.nayton_korkeus) for _ in range(100))  
-        self.hirviot = [next(hirvio_generaattori) for _ in range(15)]
+    def peli_silmukka(self): 
+        hirvio_generaattori = (PikkuHirvio(self.nayton_leveys, self.nayton_korkeus) for _ in range(15))  #generaattorilla voin määrätä hirviöiden kokonaismäärän
+        self.hirviot = [next(hirvio_generaattori) for _ in range(15)] #generoi halutun määrän hirviöitä kentälle
+        pomo_generaattori = self.pomo_generaattori()
         while True:
             self.naytto.fill((100,100,100))
             self.piirra_pisteet(self.fontti)
@@ -216,29 +285,50 @@ class Robo_Survivor:
             self.liiku_robo()
             miekan_isku = self.robo_miekka.miekan_sijainti()
             for hirvio in self.hirviot:
-                hirvio.hirvio_suunta(self.robo_keskipiste_x, self.robo_keskipiste_y)
-                hirvio.liiku_hirvio()
 
                 if hirvio.hirviot_paallekkain(self.hirviot):
                     hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
 
                 if self.osuuko_roboon(hirvio):
                     hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
+
+                if miekan_isku and hirvio not in self.robo_miekka.osutut_hirviot:    
+                    if hirvio.osuuko_hirvioon(miekan_isku):
+                        hirvio.hp -= 1
+                        self.robo_miekka.osutut_hirviot.append(hirvio)
+                        hirvio.osuma_aika = 5
                     
-                if hirvio.osuuko_hirvioon(miekan_isku):
-                    hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
+                if hirvio.hp <= 0:
                     self.hirviot.remove(hirvio)
+                    self.pisteet +=1
                     try:
                         self.hirviot.append(next(hirvio_generaattori))
                     except StopIteration:
                         pass
-                    self.pisteet +=1
 
+                if len(self.hirviot) == 0:
+                    try:
+                        self.hirviot.append(next(pomo_generaattori))
+                    except StopIteration:
+                        pass #Voitto 
 
-                self.naytto.blit(hirvio.kuva, (hirvio.x, hirvio.y))
+                if isinstance(hirvio, PomoHirvio): #Pomo hirvion käytös
+                    hirvio.osuma_kuva(self.naytto)
+                    hirvio.syoksy_seuraus(self.robo_keskipiste_x, self.robo_keskipiste_y)
+                    if hirvio.vaihe == "tarisee" or hirvio.vaihe == "syoksyy":
+                        hirvio.syoksy()
+                    else:
+                        hirvio.hirvio_suunta(self.robo_keskipiste_x, self.robo_keskipiste_y)
+                        hirvio.liiku_hirvio()
+                else:
+                    self.naytto.blit(hirvio.kuva, (hirvio.x, hirvio.y))
+                    hirvio.hirvio_suunta(self.robo_keskipiste_x, self.robo_keskipiste_y)
+                    hirvio.liiku_hirvio()
+
             self.robo_miekka.robo_sijainti(self.robo_keskipiste_x, self.robo_keskipiste_y)
             if miekan_isku:
-                pygame.draw.line(self.naytto, (255, 255, 255), miekan_isku[0], miekan_isku[1], 3)
+                pygame.draw.line(self.naytto, (125, 249, 255), miekan_isku[0], miekan_isku[1], 4)
+
             self.naytto.blit(self.robo_kuva, (self.robo_x, self.robo_y))
             pygame.display.flip()
             self.kello.tick(60)    
