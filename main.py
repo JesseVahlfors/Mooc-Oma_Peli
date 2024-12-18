@@ -147,7 +147,6 @@ class PomoHirvio(Hirvio):
  
     def syoksy_seuraus(self, robo_keskipiste_x, robo_keskipiste_y): #seuraa syoksyn ajoitusta ja alustaa syoksyajan ja tärinäajan.
         aika = pygame.time.get_ticks()
-        print(aika - self.viime_syoksy, self.vaihe)
 
         if self.vaihe == None and aika - self.viime_syoksy >= self.syoksy_vali:
             self.vaihe = "tarisee"
@@ -155,7 +154,7 @@ class PomoHirvio(Hirvio):
             self.syoksy_aika = 10
             self.viime_syoksy = aika
             self.hirvio_suunta(robo_keskipiste_x, robo_keskipiste_y)
-
+           
         if self.vaihe == "tarisee":
             self.aloitus_aika -=1
             self.x += random.randint(-5, 5)
@@ -276,6 +275,7 @@ class Robo_Survivor:
         hirvio_generaattori = (PikkuHirvio(self.nayton_leveys, self.nayton_korkeus) for _ in range(15))  #generaattorilla voin määrätä hirviöiden kokonaismäärän
         self.hirviot = [next(hirvio_generaattori) for _ in range(15)] #generoi halutun määrän hirviöitä kentälle
         pomo_generaattori = self.pomo_generaattori()
+        kosketus_aika = 0
         while True:
             self.naytto.fill((100,100,100))
             self.piirra_pisteet(self.fontti)
@@ -288,11 +288,14 @@ class Robo_Survivor:
                 if hirvio.hirviot_paallekkain(self.hirviot):
                     hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
 
-                if self.osuuko_roboon(hirvio):
-                    
+                if self.osuuko_roboon(hirvio): #selvittää osuuko hirvio roboon ja vähentää hp:ta jos ei ole koskettu sekunnin sisällä
+                    aika = pygame.time.get_ticks()
+                    kuolemattomuus_aika = 1000
+                    if aika - kuolemattomuus_aika > kosketus_aika:
+                        self.robo_elamat -= 1
+                        kosketus_aika = aika
                     if not isinstance(hirvio, PomoHirvio):
                         hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
-                    self.robo_elamat -= 1
 
                 if miekan_isku and hirvio not in self.robo_miekka.osutut_hirviot:    
                     if hirvio.osuuko_hirvioon(miekan_isku):
