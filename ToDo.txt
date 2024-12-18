@@ -1,2 +1,1 @@
-robo elämät patteri = ovi.png , häviö tapahtuma.
-Luo aloitusruutu ohjeilla ja voittoruutu.
+
