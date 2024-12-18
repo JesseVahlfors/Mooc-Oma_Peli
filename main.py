@@ -313,6 +313,7 @@ class Robo_Survivor:
         yield PomoHirvio(self.nayton_leveys, self.nayton_korkeus)
         
     def peli_silmukka(self):
+        self.pisteet = 0
         self.robo_elamat = 3
         self.voitto = False 
         hirvio_generaattori = (PikkuHirvio(self.nayton_leveys, self.nayton_korkeus) for _ in range(100))  #generaattorilla voin määrätä hirviöiden kokonaismäärän
@@ -366,8 +367,7 @@ class Robo_Survivor:
                     hirvio.syoksy_seuraus(self.robo_keskipiste_x, self.robo_keskipiste_y)
                     if not hirvio.vaihe in {"tarisee","syoksyy"}:
                         hirvio.hirvio_suunta(self.robo_keskipiste_x, self.robo_keskipiste_y)
-                        hirvio.liiku_hirvio()
-          
+                        hirvio.liiku_hirvio()       
                 else:
                     self.naytto.blit(hirvio.kuva, (hirvio.x, hirvio.y))
                     hirvio.hirvio_suunta(self.robo_keskipiste_x, self.robo_keskipiste_y)
@@ -381,7 +381,7 @@ class Robo_Survivor:
                 self.piirra_havio()
             if self.voitto == True:
                 self.piirra_voitto()
-              
+            print(self.pisteet)
             pygame.display.flip()
             self.kello.tick(60)    
 
