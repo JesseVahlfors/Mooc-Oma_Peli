@@ -47,7 +47,7 @@ class Hirvio:
         self.x, self.y = self.luo_aloituspaikka()
         self.hp = 1
 
-    def luo_aloituspaikka(self):
+    def luo_aloituspaikka(self): #Luo satunnaisen paikan ruudun ulkopuolella
         vasen_x, oikea_x = -100, self.nayton_leveys + 100
         yla_y, ala_y = -100, self.nayton_korkeus + 100
 
@@ -67,7 +67,7 @@ class Hirvio:
 
         return x, y
     
-    def hirvio_suunta(self, robo_keskipiste_x, robo_keskipiste_y):
+    def hirvio_suunta(self, robo_keskipiste_x, robo_keskipiste_y): #antaa robon suunnan hirviöille
         hirvio_laatikko = self.kuva.get_rect()
         hirvio_laatikko.topleft = (self.x, self.y)
         hirvio_ylä = hirvio_laatikko.top
@@ -93,7 +93,7 @@ class Hirvio:
         self.x += self.nopeus_x
         self.y += self.nopeus_y
 
-    def hirviot_paallekkain(self, muut_hirviot):
+    def hirviot_paallekkain(self, muut_hirviot): 
         for muu_hirvio in muut_hirviot:
             if self != muu_hirvio:
                 if (self.x <= muu_hirvio.x - 5 + muu_hirvio.kuva.get_width() and
@@ -128,7 +128,7 @@ class PikkuHirvio(Hirvio):
 class PomoHirvio(Hirvio):
     def __init__(self, nayton_leveys, nayton_korkeus):
         super().__init__(nayton_leveys, nayton_korkeus)
-        self.kuva.fill((255, 0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+        self.kuva.fill((255, 0, 0), special_flags=pygame.BLEND_RGBA_MIN) #Muuttaa Pomon värin
         self.kuva =  pygame.transform.scale(self.kuva, (self.kuva.get_width() * 1.5, self.kuva.get_height() * 1.5))
         self.hp = 30
         self.osuma_aika = 0
@@ -144,7 +144,7 @@ class PomoHirvio(Hirvio):
         self.x += self.nopeus_x *2
         self.y += self.nopeus_y *2
     
-    def osuma_kuva(self, naytto): #Pomo hirvio välähtää, kun saa osuman
+    def osuma_kuva(self, naytto): #Pomohirvio välähtää, kun saa osuman
         if self.osuma_aika > 0:
             osuma_kuva = self.kuva.copy()
             osuma_kuva.fill((200, 200, 255), special_flags=pygame.BLEND_RGBA_SUB)
@@ -273,6 +273,7 @@ class Robo_Survivor:
                 rivi_y += 50
             self.naytto.blit(self.robo_kuva, (self.robo_x, self.robo_x -200))
             pygame.display.flip()
+            self.kello.tick(60)
 
     def piirra_elamat(self, fontti):
         elama = pygame.image.load("kolikko.png")
@@ -318,12 +319,15 @@ class Robo_Survivor:
         self.hirviot = [next(hirvio_generaattori) for _ in range(15)] #generoi halutun määrän hirviöitä kentälle
         pomo_generaattori = self.pomo_generaattori()
         kosketus_aika = 0
+
         while True:
             self.naytto.fill((100,100,100))
             self.piirra_elamat(self.fontti)
             self.tutki_tapahtumat()
             self.liiku_robo()
+
             miekan_isku = self.robo_miekka.miekan_sijainti()
+
             for hirvio in self.hirviot:
                 if hirvio.hirviot_paallekkain(self.hirviot):
                     hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
@@ -337,7 +341,7 @@ class Robo_Survivor:
                     if not isinstance(hirvio, PomoHirvio):
                         hirvio.x, hirvio.y = hirvio.luo_aloituspaikka()
 
-                if miekan_isku and hirvio not in self.robo_miekka.osutut_hirviot:    
+                if miekan_isku and hirvio not in self.robo_miekka.osutut_hirviot:  #Miekkalyönti voi osua vain kerran per hirviö 
                     if hirvio.osuuko_hirvioon(miekan_isku):
                         hirvio.hp -= 1
                         self.robo_miekka.osutut_hirviot.append(hirvio)
@@ -347,13 +351,13 @@ class Robo_Survivor:
                     self.hirviot.remove(hirvio)
                     self.pisteet +=1
                     try:
-                        self.hirviot.append(next(hirvio_generaattori))
+                        self.hirviot.append(next(hirvio_generaattori)) #Pitää hirviö määrän samana, kun hirviöitä riittää.
                     except StopIteration:
                         pass
 
                 if len(self.hirviot) == 0:
                     try:
-                        self.hirviot.append(next(pomo_generaattori))
+                        self.hirviot.append(next(pomo_generaattori)) #Luo Pomon, kun viimeinen pikkuhirviö tuhoutuu
                     except StopIteration:
                        self.voitto = True
 
@@ -369,7 +373,7 @@ class Robo_Survivor:
                     hirvio.hirvio_suunta(self.robo_keskipiste_x, self.robo_keskipiste_y)
                     hirvio.liiku_hirvio()
 
-            self.robo_miekka.robo_sijainti(self.robo_keskipiste_x, self.robo_keskipiste_y)
+            self.robo_miekka.robo_sijainti(self.robo_keskipiste_x, self.robo_keskipiste_y) #miekka seuraa roboa
             if miekan_isku:
                 pygame.draw.line(self.naytto, (125, 249, 255), miekan_isku[0], miekan_isku[1], 4)
             self.naytto.blit(self.robo_kuva, (self.robo_x, self.robo_y))
